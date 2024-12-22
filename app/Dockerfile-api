@@ -1,0 +1,7 @@
+FROM node:17 AS development
+WORKDIR /usr/src/app
+COPY package*.json ./
+COPY prisma ./prisma/
+RUN npm install --force
+COPY . .
+RUN npm run prisma:generate

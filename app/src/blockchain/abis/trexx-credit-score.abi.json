@@ -1,0 +1,30 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_userSlug",
+        "type": "string"
+      },
+      {
+        "internalType": "address[]",
+        "name": "_walletAddresses",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_score",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "registerScore",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

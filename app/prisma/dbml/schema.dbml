@@ -1,0 +1,189 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table user {
+  id Int [pk, increment]
+  slug String [unique, not null]
+  name String [not null]
+  password String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  contacts contact [not null]
+  wallets wallet [not null]
+  scores score [not null]
+  userEvent user_events [not null]
+}
+
+Table wallet {
+  id Int [pk, increment]
+  slug String [unique, not null]
+  address String [not null]
+  isActive Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  userId Int [not null]
+  user user [not null]
+  scans scan [not null]
+}
+
+Table contact {
+  id Int [pk, increment]
+  slug String [unique, not null]
+  type ContactType [not null]
+  value String [not null]
+  isActive Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  userId Int [not null]
+  user user [not null]
+}
+
+Table scan {
+  id Int [pk, increment]
+  slug String [unique, not null]
+  transactionHash String [not null]
+  blockHash String [not null]
+  data String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  walletId Int [not null]
+  eventId Int [not null]
+  wallet wallet [not null]
+  event event [not null]
+}
+
+Table score {
+  id Int [pk, increment]
+  slug String [unique, not null]
+  value Int [not null]
+  isActive Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  userId Int [not null]
+  user user [not null]
+  scoreContractsBlockchains score_contract [not null]
+}
+
+Table blockchain {
+  id Int [pk, increment]
+  slug String [unique, not null]
+  name String [not null]
+  token String [not null]
+  url String [not null]
+  isActive Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  blockchainProtocols blockchain_protocol [not null]
+  ScoreContractBlockchain score_contract [not null]
+}
+
+Table protocol {
+  id Int [pk, increment]
+  slug String [unique, not null]
+  name String [not null]
+  isActive Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  blockchainProtocols blockchain_protocol [not null]
+}
+
+Table blockchain_protocol {
+  id Int [pk, increment]
+  blockchainId Int [not null]
+  protocolId Int [not null]
+  blockchain blockchain [not null]
+  protocol protocol [not null]
+  contracts contract [not null]
+}
+
+Table category {
+  id Int [pk, increment]
+  slug String [unique, not null]
+  name String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  contracts contract [not null]
+}
+
+Table contract {
+  id Int [pk, increment]
+  slug String [unique, not null]
+  address String [not null]
+  abi Json [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  categoryId Int [not null]
+  blockchainProtocolId Int [not null]
+  category category [not null]
+  blockchainProtocol blockchain_protocol [not null]
+  events event [not null]
+  scoreContractsBlockchains score_contract [not null]
+}
+
+Table event {
+  id Int [pk, increment]
+  slug String [unique, not null]
+  name String [not null]
+  weight Int [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  contractId Int [not null]
+  contract contract [not null]
+  scans scan [not null]
+}
+
+Table score_contract {
+  id Int [pk, increment]
+  lastBlock Int [not null]
+  scoreId Int [not null]
+  contractId Int [not null]
+  blockchainId Int [not null]
+  score score [not null]
+  contract contract [not null]
+  blockchain blockchain [not null]
+}
+
+Table user_events {
+  id Int [pk, increment]
+  event String [not null]
+  value Int [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [default: `now()`, not null]
+  userId Int [not null]
+  blockchain String [not null]
+  user user [not null]
+}
+
+Enum ContactType {
+  Email
+  Phone
+}
+
+Ref: wallet.userId > user.id
+
+Ref: contact.userId > user.id
+
+Ref: scan.walletId > wallet.id
+
+Ref: scan.eventId > event.id
+
+Ref: score.userId > user.id
+
+Ref: blockchain_protocol.blockchainId > blockchain.id
+
+Ref: blockchain_protocol.protocolId > protocol.id
+
+Ref: contract.categoryId > category.id
+
+Ref: contract.blockchainProtocolId > blockchain_protocol.id
+
+Ref: event.contractId > contract.id
+
+Ref: score_contract.scoreId > score.id
+
+Ref: score_contract.contractId > contract.id
+
+Ref: score_contract.blockchainId > blockchain.id
+
+Ref: user_events.userId > user.id

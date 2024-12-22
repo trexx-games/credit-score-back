@@ -1,0 +1,101 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type JwtModel {
+  accessToken: String!
+  refreshToken: String!
+}
+
+type ContactModel {
+  slug: String!
+  type: ContactType!
+  value: String!
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum ContactType {
+  Email
+  Phone
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type ScoreModel {
+  slug: String!
+  value: String!
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type UserModel {
+  slug: String!
+  name: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  email: ContactModel!
+  phone: ContactModel
+  wallets: [WalletModel!]!
+  score: ScoreModel
+}
+
+type WalletModel {
+  slug: String!
+  address: String!
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  scans: [ScanModel!]!
+}
+
+type ScanModel {
+  slug: String!
+  transactionHash: String!
+  blockHash: String!
+  data: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type UserEventModel {
+  value: String!
+  blockchain: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Query {
+  user(slug: ID!): UserModel!
+  scores(slug: ID!): [ScoreModel!]!
+  event(slug: ID!): UserEventModel!
+}
+
+type Mutation {
+  authenticate(input: AuthenticateInput!): JwtModel!
+  creditScoreCreate: Boolean!
+  userCreate(input: UserCreateInput!): UserModel!
+  walletCreate(input: WalletCreateInput!): WalletModel!
+}
+
+input AuthenticateInput {
+  email: String!
+  password: String!
+}
+
+input UserCreateInput {
+  name: String!
+  email: String!
+  password: String!
+}
+
+input WalletCreateInput {
+  address: String!
+  signature: String!
+  message: String!
+}

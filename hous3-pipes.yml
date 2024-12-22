@@ -1,0 +1,23 @@
+project:
+  name: "Trexx - Blockchain Score Credit"
+  description: ""
+
+client:
+  name: "Trexx"
+  contact_email: "tech@acmecorp.example"
+  billing_id: ""
+
+cloud:
+  - name: "AWS"
+    regions: ["us-west-1"] 
+    terraform_backend:
+      bucket: "acme-corp-tfstate"
+      key: "aws/acme-infra.tfstate" 
+
+environments:
+  staging:
+    terraform_workspace: "staging"
+
+destroy:
+  enable: false
+  confirmation_required: false

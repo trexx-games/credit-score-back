@@ -1,0 +1,174 @@
+name: CI Infra Terraform and Pull Request to Staging
+
+on:
+  push:
+    branches:
+      - feat/**
+
+permissions:
+  pull-requests: write
+  contents: write
+  repository-projects: write
+
+jobs:
+  project-setup:
+    name: Project Cloud Setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: read-yaml-file
+        uses: pietrobolcato/action-read-yaml@1.0.0
+        id: yml
+        with:
+          config: ${{ github.workspace }}/hous3-pipes.yml
+      
+      - name: use-yaml-file
+        run: |
+          echo Project Name: ${{ steps.read_action_js.outputs['project.name'] }}
+
+  terraform-ci:
+    name: Terraform CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: hous3-digital/trexx-aws-app-backend
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.9.3"
+
+      - name: Navigate to Terraform folder
+        run: |
+          cd infra/terraform
+
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Linting
+        id: linting
+        run: echo Linting
+      
+      - name: Security Scan
+        if: false
+        id: security-scan
+        uses: aquasecurity/tfsec-action@v1.0.0
+
+  app-ci:
+    name: App CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: hous3-digital/trexx-aws-app-backend 
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: cd app && npm install
+
+      - name: Unit Testing
+        if: false
+        id: unit-testing
+        run: cd app && npm run test
+
+      - name: Linting
+        id: linting
+        if: false
+        uses: wearerequired/lint-action@v2
+        with:
+          eslint: true
+
+      - name: Statical Analysis & Security Scan
+        id: sonar-cloud
+        run: echo Run Sonar Cloud
+
+  pull-request:
+    name: Open PR
+    needs: [terraform-ci, app-ci]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: hous3-digital/trexx-aws-app-backend
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create pull request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo ${{ github.ref_name }}
+
+          pr_number=$(gh pr list --state open --head ${{ github.ref_name }} --base staging --json number -q '.[].number')
+          sleep 4
+          if [ -n "$pr_number" ]; then
+            echo "GOING TO EDIT CURRENT PR"
+            gh pr edit $pr_number \
+              --title "PR: ${{ github.ref_name }} -> staging" \
+
+          else 
+            echo "GOING TO CREATE PR"
+              gh pr create \
+              --title "PR: ${{ github.ref_name }} -> staging" \
+              --body "Description" \
+              --head ${{ github.ref }} \
+              --base staging 
+          fi
+
+  infracost-pull-request-checks:
+    name: Infracost Pull Request Checks
+    needs: pull-request
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+
+      - name: Generate Infracost cost estimate baseline
+        run: |
+          infracost breakdown --path=./infra/terraform \
+                              --format=json \
+                              --out-file=/tmp/infracost-base.json
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+
+      - name: Generate Infracost diff
+        run: |
+          infracost diff --path=./infra/terraform \
+                          --format=json \
+                          --compare-to=/tmp/infracost-base.json \
+                          --out-file=/tmp/infracost.json
+
+      - name: Post Infracost comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            pr_number=$(gh pr list --state open --head ${{ github.ref_name }} --base staging --json number -q '.[].number')
+
+            infracost comment github --path=/tmp/infracost.json \
+                                    --repo=$GITHUB_REPOSITORY \
+                                    --github-token=${{ secrets.GITHUB_TOKEN }} \
+                                    --pull-request=$pr_number \
+                                    --behavior=update
